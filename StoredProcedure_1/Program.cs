@@ -1,65 +1,38 @@
 ﻿using System.Configuration;
+using System.Data;
 using MySql.Data.MySqlClient;
 
-public class StoredProcedure_1
+class StoredProcedure_1
 {
-    public static string connectionString = "server=localhost;user=root;password=Cadhla24!;database=employeedb;";
 
-    public static void Main(string[] args)
+    static void Main(string[] args)
     {
-        // 1. Using the '@' character before a string enables us to write it in multiple lines;
-        // 2. We don't need to change the DELIMITER when creating a procedure from C# code;
-        string procedureCode =
-            @"DROP PROCEDURE IF EXISTS SetupTable;
-            DROP TABLE IF EXISTS Employees;
-
-            CREATE PROCEDURE `SetupTable` ()
-            BEGIN
-	            CREATE TABLE IF NOT EXISTS Employees (
-		            EmployeeID INT AUTO_INCREMENT PRIMARY KEY,
-		            FirstName VARCHAR(50),
-		            LastName VARCHAR(50),
-		            Age INT,
-		            Gender ENUM('Male', 'Female', 'Other'),
-		            Department VARCHAR(50),
-		            Position VARCHAR(50),
-		            Salary DECIMAL(10, 2)
-	            );
-
-	            INSERT INTO Employees (FirstName, LastName, Age, Gender, Department, Position, Salary) VALUES 
-		            ('John', 'Doe', 30, 'Male', 'IT', 'Software Engineer', 60000.00),
-		            ('Jane', 'Smith', 35, 'Female', 'HR', 'HR Manager', 70000.00),
-		            ('Alice', 'Johnson', 40, 'Female', 'Finance', 'Accountant', 55000.00),
-		            ('Bob', 'Jones', 45, 'Male', 'Marketing', 'Marketing Manager', 75000.00),
-		            ('Emily', 'Brown', 28, 'Female', 'Sales', 'Sales Representative', 50000.00);
-
-				SELECT FirstName, LastName, Position, Salary FROM Employees ORDER BY Salary DESC LIMIT 3;
-            END;";
+        string connectionString = "server=localhost;user=root;password=Cadhla24!;database=employeedb;";
 
         using (MySqlConnection connection = new MySqlConnection(connectionString))
         {
             connection.Open();
+            
+            string queryTxt = "SELECT * FROM Employees;";
+            MySqlDataAdapter adapter = new MySqlDataAdapter(queryTxt, connection);
+            DataSet dataset = new DataSet();
+            adapter.Fill(dataset);
 
-            // A stored procedure can be created by executing it like any other SQL command.
-            MySqlCommand cmd = new MySqlCommand(procedureCode, connection);
-            cmd.ExecuteNonQuery();
+            DataTable table = dataset.Tables[0];
 
-            // Write code below this line
-            MySqlCommand callCmd = new MySqlCommand("CALL SetupTable();", connection);
-            using (MySqlDataReader reader =  callCmd.ExecuteReader())
+            foreach(DataRow row in table.Rows)
             {
-                Console.WriteLine("Name, Position, Salary");
-                while (reader.Read())
-                {
-                    string first_name = reader.GetString("FirstName");
-                    string last_name = reader.GetString("LastName");
-                    string position = reader.GetString("Position");
-                    float salary = reader.GetFloat("Salary");
+                int id = (int)row["EmployeeID"];
+                string first_name = (string)row["FirstName"];
+                string last_name = (string)row["LastName"];
+                int age = (int)row["Age"];
+                string gender = (string)row["Gender"];
+                string department = (string)row["Department"];
+                string position = (string)row["Position"];
+                decimal salary = (decimal)row["Salary"];
 
-                    Console.WriteLine($"{first_name}, {last_name}, {position}, {salary}");
-                }
+                    Console.WriteLine($"{id}, {first_name}, {last_name}, {age}, {gender}, {department}, {position}, {salary}");
             }
-            // Write code above this line
         }
     }
     }
